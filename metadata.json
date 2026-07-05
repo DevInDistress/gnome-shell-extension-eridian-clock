@@ -1,6 +1,6 @@
 {
   "name": "Eridian Clock",
-  "description": "Displays the eridian time",
+  "description": "Displays the eridian time from Project Hail Mary",
   "uuid": "clock@eridani.space",
   "settings-schema": "org.gnome.shell.extensions.clock",
   "shell-version": [
