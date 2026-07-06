@@ -25,10 +25,13 @@ import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/ex
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 
+const MILLIS_PER_ERIDIAN_SECOND = 2366;
+const SECONDS_PER_ERIDIAN_DAY = 46656;
+
 const Indicator = GObject.registerClass(
 class Indicator extends PanelMenu.Button {
     _init() {
-        super._init(0.0, _('Eridanian Clock'));
+        super._init(0.0, _('Eridian Clock'));
 
         this._label = new St.Label({
             text: getEridianTime(),
@@ -36,18 +39,10 @@ class Indicator extends PanelMenu.Button {
             y_align: Clutter.ActorAlign.CENTER,
         });
         this.add_child(this._label);
+    }
 
-        this._timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 2366, () => {
-            this._label.text = getEridianTime();
-            return GLib.SOURCE_CONTINUE;
-        });
-
-        this.connect('destroy', () => {
-            if (this._timeoutId) {
-                GLib.Source.remove(this._timeoutId);
-                this._timeoutId = 0;
-            }
-        });
+    refreshTime() {
+        this._label.text = getEridianTime();
     }
 });
 
@@ -62,12 +57,28 @@ export default class IndicatorExampleExtension extends Extension {
     }
 
     disable() {
-        if (this._settingsChangedId && this._settings)
+        this._removeTimer();
+        this._disconnectFromSettings();
+        this._destroyUIElement();
+
+    }
+
+    _removeTimer() {
+        if (this._timeoutId) {
+            GLib.Source.remove(this._timeoutId);
+            this._timeoutId = 0;
+        }
+    }
+
+    _disconnectFromSettings() {
+        if (this._settingsChangedId && this._settings) {
             this._settings.disconnect(this._settingsChangedId);
+            this._settingsChangedId = 0;
+            this._settings = null;
+        }
+    }
 
-        this._settingsChangedId = 0;
-        this._settings = null;
-
+    _destroyUIElement() {
         if (this._indicator)
             this._indicator.destroy();
 
@@ -75,6 +86,14 @@ export default class IndicatorExampleExtension extends Extension {
     }
 
     _rebuildIndicator() {
+        const side = this._settings.get_string('position') === 'left' ? 'left' : 'right';
+        const position = Main.sessionMode.panel[side].length;
+
+        if (this._timeoutId) {
+            GLib.Source.remove(this._timeoutId);
+            this._timeoutId = 0;
+        }
+
         if (this._indicator) {
             this._indicator.destroy();
             this._indicator = null;
@@ -82,13 +101,19 @@ export default class IndicatorExampleExtension extends Extension {
 
         this._indicator = new Indicator();
 
-        const side = this._settings.get_string('position') === 'left' ? 'left' : 'right';
-        const position = Main.sessionMode.panel[side].length;
         Main.panel.addToStatusArea(this.uuid, this._indicator, position, side);
+
+        this._timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, MILLIS_PER_ERIDIAN_SECOND, () => {
+            if (this._indicator) {
+                this._indicator.refreshTime();
+                return GLib.SOURCE_CONTINUE;
+            }
+            return GLib.SOURCE_REMOVE;
+        });
     }
 }
 
-function convertDigit(number) {
+function _convertDigit(number) {
     switch (number) {
     case 0:
         return 'ℓ';
@@ -107,27 +132,26 @@ function convertDigit(number) {
     }
 }
 
-function getTime() {
+function _getTime() {
     return Date.now();
 }
 
-function getTimeAsEridianMillis() {
-    return Math.floor(getTime() / 2366) % 46656;
+function _getTimeAsEridianMillis() {
+    return Math.floor(_getTime() / MILLIS_PER_ERIDIAN_SECOND) % SECONDS_PER_ERIDIAN_DAY;
 }
 
-function toSenary() {
-    let time = getTimeAsEridianMillis();
+function _toSenary(time) {
     let result = '';
 
     while (time > 0) {
         const remainder = time % 6;
-        result = convertDigit(remainder) + result;
+        result = _convertDigit(remainder) + result;
         time = Math.floor(time / 6);
     }
 
-    return result || convertDigit(0);
+    return result || _convertDigit(0);
 }
 
 function getEridianTime() {
-    return toSenary();
+    return _toSenary(_getTimeAsEridianMillis());
 }
