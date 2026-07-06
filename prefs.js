@@ -3,12 +3,12 @@ import Gtk from 'gi://Gtk';
 
 import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-export default class EridanianClockPreferences extends ExtensionPreferences {
+export default class EridianClockPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         const settings = this.getSettings();
 
         const page = new Adw.PreferencesPage({
-            title: _('Eridanian Clock'),
+            title: _('Eridian Clock'),
             icon_name: 'preferences-system-time-symbolic',
         });
 
@@ -25,20 +25,16 @@ export default class EridanianClockPreferences extends ExtensionPreferences {
             model: positionModel,
         });
 
-        const positionValues = ['left', 'right'];
-
-        const syncPositionRow = () => {
-            const currentPosition = settings.get_string('position');
-            const index = positionValues.indexOf(currentPosition);
-            positionRow.selected = index >= 0 ? index : 1;
+        const updatePositionRow = () => {
+            positionRow.selected = settings.get_string('position') === 'left' ? 0 : 1;
         };
 
         positionRow.connect('notify::selected', () => {
-            settings.set_string('position', positionValues[positionRow.selected] ?? 'right');
+            settings.set_string('position', positionRow.selected === 0 ? 'left' : 'right');
         });
 
-        settings.connect('changed::position', syncPositionRow);
-        syncPositionRow();
+        settings.connect('changed::position', updatePositionRow);
+        updatePositionRow();
 
         group.add(positionRow);
         page.add(group);
