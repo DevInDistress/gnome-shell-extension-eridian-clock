@@ -49,9 +49,9 @@ class Indicator extends PanelMenu.Button {
 export default class IndicatorExampleExtension extends Extension {
     enable() {
         this._settings = this.getSettings();
-        this._settingsChangedId = this._settings.connect('changed::position', () => {
+        this._settingsChangedId = this._settings.connectObject('changed::position', () => {
             this._rebuildIndicator();
-        });
+        }, this);
 
         this._rebuildIndicator();
     }
@@ -71,11 +71,12 @@ export default class IndicatorExampleExtension extends Extension {
     }
 
     _disconnectFromSettings() {
-        if (this._settingsChangedId && this._settings) {
-            this._settings.disconnect(this._settingsChangedId);
+        if (this._settings) {
+            if (this._settings.disconnectObject)
+                this._settings.disconnectObject(this);
             this._settingsChangedId = 0;
-            this._settings = null;
         }
+        this._settings = null;
     }
 
     _destroyUIElement() {
