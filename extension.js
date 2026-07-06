@@ -144,13 +144,13 @@ function _getTimeAsEridianMillis() {
 function _toSenary(time) {
     let result = '';
 
-    while (time > 0) {
+    for (let i = 0; i < 6; i++) {
         const remainder = time % 6;
         result = _convertDigit(remainder) + result;
         time = Math.floor(time / 6);
     }
 
-    return result || _convertDigit(0);
+    return result;
 }
 
 function getEridianTime() {
