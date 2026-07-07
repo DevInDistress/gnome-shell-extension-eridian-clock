@@ -72,8 +72,7 @@ export default class IndicatorExampleExtension extends Extension {
 
     _disconnectFromSettings() {
         if (this._settings) {
-            if (this._settings.disconnectObject)
-                this._settings.disconnectObject(this);
+            this._settings.disconnectObject(this);
             this._settingsChangedId = 0;
         }
         this._settings = null;
