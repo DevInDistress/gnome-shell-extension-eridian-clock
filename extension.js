@@ -26,7 +26,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 
 const MILLIS_PER_ERIDIAN_SECOND = 2366;
-const SECONDS_PER_ERIDIAN_DAY = 46656;
+const SECONDS_PER_ERIDIAN_DAY = 7776;
 
 const Indicator = GObject.registerClass(
 class Indicator extends PanelMenu.Button {
@@ -143,7 +143,7 @@ function _getTimeAsEridianMillis() {
 function _toSenary(time) {
     let result = '';
 
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 5; i++) {
         const remainder = time % 6;
         result = _convertDigit(remainder) + result;
         time = Math.floor(time / 6);
